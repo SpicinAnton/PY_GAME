@@ -10,6 +10,7 @@ clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+portal_group = pygame.sprite.Group()
 
 pygame.init()
 size = width, height = 800, 600
@@ -20,6 +21,7 @@ pygame.display.set_caption('Лабиринт')
 
 def generate_level(level):
     new_player, x, y = None, None, None
+    portal, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -29,6 +31,10 @@ def generate_level(level):
             elif level[y][x] == '@':
                 Tile('empty', x, y)
                 new_player = Player(x, y)
+            elif level[y][x] == '*':
+                Tile('empty', x, y)
+                portal = Portal(x, y)
+
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
 
@@ -100,13 +106,18 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
+
 tile_images = {
     'wall': load_image('kr_kirp.png'),
     'empty': load_image('grass.png')
 }
 player_image = load_image('p22.png')
-# player_image = pygame.transform.scale(player, (55, 55))
+portal_image = load_image('port333.png')
+
+
 tile_width = tile_height = 50
+
+
 
 
 class Tile(pygame.sprite.Sprite):
@@ -122,13 +133,22 @@ class Player(pygame.sprite.Sprite):
         super().__init__(player_group, all_sprites)
         self.image = player_image
         self.rect = self.image.get_rect().move(
-            tile_width * pos_x + 15, tile_height * pos_y + 5)
+            tile_width * pos_x, tile_height * pos_y)
         self.pos = pos_x, pos_y
 
     def move(self, x, y):
         self.pos = (x, y)
         self.rect = self.image.get_rect().move(
-            tile_width * self.pos[0] + 15, tile_height * self.pos[1] + 5)
+            tile_width * self.pos[0], tile_height * self.pos[1])
+
+
+class Portal(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(portal_group, all_sprites)
+        self.image = portal_image
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x - 9, tile_height * pos_y - 2)
+        self.pos = pos_x, pos_y
 
 
 def move(hero, movement):
@@ -174,6 +194,7 @@ while run:
         tiles_group.draw(screen)
         all_sprites.draw(screen)
         player_group.draw(screen)
+        portal_group.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
 terminate()
@@ -197,6 +218,7 @@ while run:
         tiles_group.draw(screen)
         all_sprites.draw(screen)
         player_group.draw(screen)
+        portal_group.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
 terminate()
