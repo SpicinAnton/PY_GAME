@@ -11,6 +11,7 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 portal_group = pygame.sprite.Group()
+moving_sprites = pygame.sprite.Group()
 
 pygame.init()
 size = width, height = 800, 600
@@ -22,6 +23,7 @@ pygame.display.set_caption('Лабиринт')
 def generate_level(level):
     new_player, x, y = None, None, None
     portal, x, y = None, None, None
+    gskelet, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '.':
@@ -34,6 +36,9 @@ def generate_level(level):
             elif level[y][x] == '*':
                 Tile('empty', x, y)
                 portal = Portal(x, y)
+            elif level[y][x] == '%':
+                Tile('empty', x, y)
+                gskelet = GoingSkelet(x, y)
 
     # вернем игрока, а также размер поля в клетках
     return new_player, x, y
@@ -106,7 +111,6 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
-
 tile_images = {
     'wall': load_image('kr_kirp.png'),
     'empty': load_image('grass.png')
@@ -116,7 +120,6 @@ portal_image = load_image('port333.png')
 
 
 tile_width = tile_height = 50
-
 
 
 
@@ -140,6 +143,43 @@ class Player(pygame.sprite.Sprite):
         self.pos = (x, y)
         self.rect = self.image.get_rect().move(
             tile_width * self.pos[0], tile_height * self.pos[1])
+
+
+class GoingSkelet(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(all_sprites, moving_sprites)
+        self.steps = []
+        self.steps.append(pygame.image.load('data/goingskelet/gs1.png'))
+        self.steps.append(pygame.image.load('data/goingskelet/gs2.png'))
+        self.steps.append(pygame.image.load('data/goingskelet/gs3.png'))
+        self.steps.append(pygame.image.load('data/goingskelet/gs4.png'))
+        self.current = 0
+        self.image = self.steps[self.current]
+        self.rect = self.image.get_rect().move(
+            tile_width * pos_x, tile_height * pos_y)
+        self.pos = (pos_x, pos_y)
+        self.n = True
+
+    def update(self):
+        self.current += 0.4
+        if self.current >= len(self.steps):
+            self.current = 0
+        self.image = self.steps[int(self.current)]
+
+        if self.n:
+            self.pos = (self.pos[0] + 0.07, self.pos[1])
+            self.rect = self.image.get_rect().move(
+                int(tile_width * self.pos[0]), int(tile_height * self.pos[1]))
+            if level_map[self.pos[1]][int(self.pos[0])+1] == '#':
+                self.n = False
+
+        if not self.n:
+            self.pos = (self.pos[0] - 0.07, self.pos[1])
+            self.rect = self.image.get_rect().move(
+                int(tile_width * self.pos[0]), int(tile_height * self.pos[1]))
+            if level_map[self.pos[1]][int(self.pos[0]) - 1] == '#':
+                self.n = True
+
 
 
 class Portal(pygame.sprite.Sprite):
@@ -174,6 +214,8 @@ def move(hero, movement):
 start_screen()
 level_map = load_level('mapa.txt')
 player, max_x, max_y = generate_level(level_map)
+move_sk = pygame.USEREVENT + 1
+pygame.time.set_timer(move_sk, 50)
 
 run = True
 while run:
@@ -189,36 +231,16 @@ while run:
                 move(player, 'down')
             if event.key == pygame.K_UP:
                 move(player, 'up')
+        if event.type == move_sk:
+            moving_sprites.update()
 
         screen.fill(pygame.Color('black'))
         tiles_group.draw(screen)
         all_sprites.draw(screen)
         player_group.draw(screen)
         portal_group.draw(screen)
-        pygame.display.flip()
-        clock.tick(FPS)
-terminate()
-
-run = True
-while run:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            run = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                move(player, 'left')
-            if event.key == pygame.K_RIGHT:
-                move(player, 'right')
-            if event.key == pygame.K_DOWN:
-                move(player, 'down')
-            if event.key == pygame.K_UP:
-                move(player, 'up')
-
-        screen.fill(pygame.Color('black'))
-        tiles_group.draw(screen)
-        all_sprites.draw(screen)
-        player_group.draw(screen)
-        portal_group.draw(screen)
+        moving_sprites.draw(screen)
+        moving_sprites.update()
         pygame.display.flip()
         clock.tick(FPS)
 terminate()
