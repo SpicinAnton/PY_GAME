@@ -165,8 +165,16 @@ class GoingSkelet(pygame.sprite.Sprite):
         self.steps.append(pygame.image.load('data/gs2.png'))
         self.steps.append(pygame.image.load('data/gs3.png'))
         self.steps.append(pygame.image.load('data/gs4.png'))
+
+        self.steps_reverse = []
+        self.steps_reverse.append(pygame.image.load('data/gs12.png'))
+        self.steps_reverse.append(pygame.image.load('data/gs22.png'))
+        self.steps_reverse.append(pygame.image.load('data/gs32.png'))
+        self.steps_reverse.append(pygame.image.load('data/gs42.png'))
+
         self.current = 0
         self.image = self.steps[self.current]
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(
             tile_width * pos_x, tile_height * pos_y)
         self.pos = (pos_x, pos_y)
@@ -174,23 +182,30 @@ class GoingSkelet(pygame.sprite.Sprite):
 
     def update(self):
         self.current += 0.4
-        if self.current >= len(self.steps):
-            self.current = 0
-        self.image = self.steps[int(self.current)]
-
         if self.n:
+            if self.current >= len(self.steps):
+                self.current = 0
+            self.image = self.steps[int(self.current)]
             self.pos = (self.pos[0] + 0.07, self.pos[1])
             self.rect = self.image.get_rect().move(
                 int(tile_width * self.pos[0]), int(tile_height * self.pos[1]))
-            if level_map[self.pos[1]][int(self.pos[0]) + 1] == '#':
+            if level_map[self.pos[1]][int(self.pos[0])+1] == '#':
                 self.n = False
 
         if not self.n:
+            if self.current >= len(self.steps_reverse):
+                self.current = 0
+            self.image = self.steps_reverse[int(self.current)]
+
             self.pos = (self.pos[0] - 0.07, self.pos[1])
             self.rect = self.image.get_rect().move(
                 int(tile_width * self.pos[0]), int(tile_height * self.pos[1]))
-            if level_map[self.pos[1]][int(self.pos[0]) - 1] == '#':
+            if level_map[self.pos[1]][int(self.pos[0])] == '#':
                 self.n = True
+
+        if pygame.sprite.collide_mask(self, player):
+            # тут нужно будет вызвать функцию, к-ая отвечает за проигрыш или потерю жизни, например
+            print('Проигрыш')
 
 
 class Portal(pygame.sprite.Sprite):
